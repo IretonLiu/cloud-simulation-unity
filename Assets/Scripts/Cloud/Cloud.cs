@@ -10,16 +10,19 @@ public class Cloud : MonoBehaviour
 
     public Shader shader;
     public GameObject boundingBox;
-    Material material;
-
+    public Material material;
 
     void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         if (material == null)
             material = new Material(shader);
         Transform transform = boundingBox.transform;
-        material.SetVector("BoundsMin", transform.position - transform.localScale / 2);
-        material.SetVector("BoundsMax", transform.position + transform.localScale / 2);
+        print(transform.position);
+        material.SetVector("boundsMin", transform.position - transform.localScale / 2);
+        material.SetVector("boundsMax", transform.position + transform.localScale / 2);
+
+        print("boundsMin " + (transform.position - transform.localScale / 2));
+        print("boundsMax " + (transform.position + transform.localScale / 2));
 
         // NoiseGenerator noiseGenerator = FindObjectOfType<NoiseGenerator>();
         // material.SetTexture("BaseNoise", noiseGenerator. )

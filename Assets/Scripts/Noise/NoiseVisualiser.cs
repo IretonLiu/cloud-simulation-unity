@@ -25,7 +25,6 @@ public class NoiseVisualiser : MonoBehaviour
     NoiseGenerator noiseGenerator;
 
 
-    bool shouldUpdateNoise = true;
     bool shouldUpdateMaterial = true;
     // Start is called before the first frame update
     void Start()
@@ -35,7 +34,7 @@ public class NoiseVisualiser : MonoBehaviour
         if (noiseGenerator.shouldUpdateNoise)
         {
             noiseGenerator.updateNoise();
-            shouldUpdateNoise = false;
+            noiseGenerator.shouldUpdateNoise = false;
         }
 
         if (material == null)
