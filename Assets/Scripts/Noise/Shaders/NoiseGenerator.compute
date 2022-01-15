@@ -1,0 +1,144 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#define UI0 1597334673U
+#define UI1 3812015801U
+#define UI2 uint2(UI0, UI1)
+#define UI3 uint3(UI0, UI1, 2798796415U)
+#define UIF 1.0 / float(0xffffffffU)
+
+static const int numThreads = 8;
+
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture3D<float4> Result;
+
+uint resolution;
+float freq;
+// ==============================================================================================
+// utility functions
+
+float3 hash33(float3 p) {
+  uint3 q = uint3(int3(p)) * UI3;
+  q = (q.x ^ q.y ^ q.z) * UI3;
+  return -1. + 2. * float3(q) * UIF;
+}
+
+float remap(float value, float ol, float oh, float nl, float nh) {
+  return nl + (value - ol) * (nh - nl) / (oh - ol);
+}
+
+// ==============================================================================================
+
+// gradient noise, credits to iq
+float gradientNoise(float3 x, float freq) {
+  // grid
+  float3 p = floor(x);
+  float3 w = frac(x);
+
+  // quintic interpolant
+  float3 u = w * w * w * (w * (w * 6. - 15.) + 10.);
+
+  // gradients
+  float3 ga = hash33(fmod(p + float3(0., 0., 0.), freq));
+  float3 gb = hash33(fmod(p + float3(1., 0., 0.), freq));
+  float3 gc = hash33(fmod(p + float3(0., 1., 0.), freq));
+  float3 gd = hash33(fmod(p + float3(1., 1., 0.), freq));
+  float3 ge = hash33(fmod(p + float3(0., 0., 1.), freq));
+  float3 gf = hash33(fmod(p + float3(1., 0., 1.), freq));
+  float3 gg = hash33(fmod(p + float3(0., 1., 1.), freq));
+  float3 gh = hash33(fmod(p + float3(1., 1., 1.), freq));
+
+  // projections
+  float va = dot(ga, w - float3(0., 0., 0.));
+  float vb = dot(gb, w - float3(1., 0., 0.));
+  float vc = dot(gc, w - float3(0., 1., 0.));
+  float vd = dot(gd, w - float3(1., 1., 0.));
+  float ve = dot(ge, w - float3(0., 0., 1.));
+  float vf = dot(gf, w - float3(1., 0., 1.));
+  float vg = dot(gg, w - float3(0., 1., 1.));
+  float vh = dot(gh, w - float3(1., 1., 1.));
+
+  // interpolation
+  return va + u.x * (vb - va) + u.y * (vc - va) + u.z * (ve - va) +
+         u.x * u.y * (va - vb - vc + vd) + u.y * u.z * (va - vc - ve + vg) +
+         u.z * u.x * (va - vb - ve + vf) +
+         u.x * u.y * u.z * (-va + vb + vc - vd + ve - vf - vg + vh);
+}
+
+// ==============================================================================================
+
+
+// Tileable 3D worley noise, credits to piyushslayer
+float worleyNoise3D(float3 str, float freq) {
+  float3 id = floor(str);
+  float3 p = frac(str);
+
+  float minDist = 10000.;
+  for (float x = -1.; x <= 1.; ++x){
+    for(float y = -1.; y <= 1.; ++y){
+      for(float z = -1.; z <= 1.; ++z) {
+        float3 offset = float3((float)x, (float)y, (float)z);
+        float3 h = hash33(((id + offset) % float3(freq, freq, freq))) * .5 + .5;
+        h += offset;
+        float3 d = p - h;
+        minDist = min(minDist, dot(d, d));
+      }
+    }
+  }
+  // inverted worley noise
+  return 1. - minDist;
+}
+
+// ==============================================================================================
+
+
+float worleyFbm(float3 str, float freq) {
+  float noise = worleyNoise3D(str * freq, freq) * .625 +
+                worleyNoise3D(str * freq * 2., freq * 2.) * .25 +
+                worleyNoise3D(str * freq * 4., freq * 4.) * .125;
+  return noise;
+}
+
+float fbm(float3 str) {
+  const int NUM_OCTAVES = 6;
+  float G = exp2(-.85);
+
+  float value = 0.0;
+  float amplitude = 1.;
+  float frequency = 4.0;
+  for (int i = 0; i < NUM_OCTAVES; ++i) {
+    value += amplitude * gradientNoise(str * frequency, frequency);
+    frequency *= 2.;
+    amplitude *= G;
+  }
+  return value;
+}
+
+// ==============================================================================================
+[numthreads(numThreads, numThreads, numThreads)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+  float3 str = id / (float) resolution;
+
+  // float worleyNoise =  worleyNoise3D(str * freq, freq);
+
+  float worleyNoiseR = worleyFbm(str, freq);
+  float worleyNoiseG = worleyFbm(str, freq * 2.);
+  float worleyNoiseB = worleyFbm(str, freq * 4.);
+
+  // vec4 pixelCol = vec4(float3(worleyNoise, 0.0, 0.0), 1.0);
+  // float simplexNoise = snoise(str * 10.0);
+  float perlinNoise = lerp(1.0, fbm(str), 0.5);
+
+  perlinNoise = abs(2.0 * perlinNoise - 1.0); // creates billowy
+  float a = 1.0;
+
+  float perlinWorley = remap(perlinNoise, 0., 1., worleyNoiseR, 1.);
+
+  float4 pixelCol = float4(worleyNoiseR, worleyNoiseG, worleyNoiseB, perlinWorley);
+  
+  // Result[id.xyz] = float4(perlinNoise, perlinNoise, perlinNoise, perlinNoise);
+  Result[id.xyz] = pixelCol;
+  
+}
