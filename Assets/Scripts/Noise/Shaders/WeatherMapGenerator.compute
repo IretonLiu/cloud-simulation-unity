@@ -1,0 +1,78 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+#include "SimplexNoise.compute"
+
+#define UI0 1597334673U
+#define UI1 3812015801U
+#define UI2 uint2(UI0, UI1)
+#define UI3 uint3(UI0, UI1, 2798796415U)
+#define UIF 1.0 / float(0xffffffffU)
+
+static const int numThreads = 8;
+
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+
+uint resolution;
+float worleyFreq;
+float fbmScale;
+float fbmLacunarity;
+float fbmPersistence;
+int fbmOctaves;
+// ==============================================================================================
+// utility functions
+
+float2 hash33(float2 p) {
+    uint2 q = uint2(int2(p)) * UI2;
+    q = (q.x ^ q.y) * UI2;
+    return -1. + 2. * float2(q) * UIF;
+}
+
+
+float worleyNoise2D(float2 uv, float freq){
+    float2 id = floor(uv);
+    float2 p = frac(uv);
+
+    float minDist = 10000.;
+    for (float x = -1.; x <= 1.; ++x){
+        for(float y = -1.; y <= 1.; ++y){
+            float2 offset = float2((float)x, (float)y);
+            float2 h = hash33(((id + offset) % float2(freq, freq))) * .5 + .5;
+            h += offset;
+            float2 d = p - h;
+            minDist = min(minDist, dot(d, d));
+            
+        }
+    }
+    return 1 - minDist;
+}
+
+float fbm(float2 uv){
+    // const int NUM_OCTAVES = 6;
+    float G = exp2(-.85);
+
+    float value = 0.0;
+    float amplitude = 1.;
+    float frequency = 4.0;
+    for (int i = 0; i < fbmOctaves; ++i) {
+        value += amplitude * snoise(uv * frequency);
+        frequency *= fbmLacunarity;
+        amplitude *= fbmPersistence;
+    }
+    return value;
+
+}
+
+[numthreads(numThreads,numThreads,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    float2 uv = (id / (float) resolution).xy;
+    // float perlinFbm = lerp(1.0, fbm(uv * fbmScale), 0.5);
+    float perlinFbm =  1 - fbm(uv * fbmScale);
+
+    float worley = worleyNoise2D(uv * worleyFreq, worleyFreq);
+    Result[id.xy] = float4(perlinFbm, worley, 1.0, 1.0);
+}

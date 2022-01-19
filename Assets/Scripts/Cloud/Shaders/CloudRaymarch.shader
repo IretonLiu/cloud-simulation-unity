@@ -3,7 +3,6 @@ Shader "Unlit/CloudRaymarch"
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
-        _Divider ("Divider", Float) = 1.0
     }
     SubShader
     {
@@ -17,7 +16,6 @@ Shader "Unlit/CloudRaymarch"
             #pragma vertex vert
             #pragma fragment frag
             // make fog work
-            #pragma multi_compile_fog
 
             #include "UnityCG.cginc"
 
@@ -77,10 +75,37 @@ Shader "Unlit/CloudRaymarch"
                 return float2(dstToBox, dstInsideBox);
             }
 
+            float remap(float value, float ol, float oh, float nl, float nh) {
+                return nl + (value - ol) * (nh - nl) / (oh - ol);
+            }
+
+
             float3 boundsMin;
             float3 boundsMax;
-            float _Divider;
-            Texture3D<float4> baseNoise;
+
+            float cloudScale;
+            float3 cloudOffset;
+            float densityThreshold;
+            float densityMultiplier;
+
+            Texture3D<float4> BaseNoise;
+            SamplerState samplerBaseNoise;
+
+            float sampleDensity(float3 position) {
+                float3 uvw = position * cloudScale * 0.001 +
+                            cloudOffset * 0.01;
+
+                uvw = uvw % (boundsMax - boundsMin);
+                // float3 uvw = position * 0.001;
+                float4 shape = BaseNoise.SampleLevel(samplerBaseNoise, uvw, 0);
+
+                // float stratocumulusDensity =
+                //     remap(position.y, 0.0, 0.2, 0.0, 1.0) * remap(position.y, .2, .6, 1., 0.);
+
+                float density = max(0, shape.a - densityThreshold) * -densityMultiplier;
+                // float density = shape.a;
+                return density;
+            }
 
             fixed4 frag (v2f i) : SV_Target
             {
@@ -95,16 +120,27 @@ Shader "Unlit/CloudRaymarch"
                 float dstToBox = boxInfo.x;
                 float dstInsideBox = boxInfo.y;
 
-                bool rayHitBox = dstInsideBox > 0;
-                if (rayHitBox){
-                     return  0;
+                // if(dstInsideBox > 0){
+                //     col = 0;
+                // }
+                int numSteps = 20;
+
+                float dstTravelled = 0;
+                float stepSize = dstInsideBox / numSteps;
+                
+
+                float totalDensity = 0;
+
+                // sample march through volume
+                [loop]while (dstTravelled < dstInsideBox) {
+                    float3 p = ro + rd * (dstToBox + dstTravelled);
+                    totalDensity += sampleDensity(p) * stepSize;
+                    dstTravelled += stepSize;
                 }
-   
-                return col;
-                // return float4(ro, 1.0);
-                // return float4(i.viewDir, 1.0);
-                // dstToBox /= _di;
-                // return float4(dstToBox, dstToBox, dstToBox, 1);
+
+                float transmittance = exp(-totalDensity);
+
+                return col * transmittance;
             }
             ENDCG
         }

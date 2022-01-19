@@ -10,6 +10,11 @@ public class NoiseVisualiser : MonoBehaviour
         R = 0, G = 1, B = 2, A = 3
     };
 
+    public enum NoiseType
+    {
+        BASE, DETAIL
+    }
+
 
     [Header("Noise Settings")]
 
@@ -18,6 +23,7 @@ public class NoiseVisualiser : MonoBehaviour
     [Range(0.0f, 1.0f)]
     public float depth;
     public NoiseChannel noiseChannel;
+    public NoiseType noiseType;
 
 
     public Material material;
@@ -58,7 +64,6 @@ public class NoiseVisualiser : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        print((int)noiseChannel);
         if (noiseGenerator.shouldUpdateNoise)
         {
             noiseGenerator.updateNoise();
@@ -79,7 +84,10 @@ public class NoiseVisualiser : MonoBehaviour
 
     void updateMaterial()
     {
-        material.SetTexture("_MainTex", noiseGenerator.renderTexture);
+        if (noiseType == NoiseType.BASE)
+            material.SetTexture("_MainTex", noiseGenerator.baseRenderTexture);
+        else if (noiseType == NoiseType.DETAIL)
+            material.SetTexture("_MainTex", noiseGenerator.detailRenderTexture);
         material.SetFloat("_Depth", depth);
         material.SetInteger("_Channel", (int)noiseChannel);
     }
