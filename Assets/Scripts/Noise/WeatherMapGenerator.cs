@@ -10,10 +10,13 @@ public class WeatherMapGenerator : MonoBehaviour
     const int computeThreadGroupSize = 8;
 
     public int worleyNoiseFrequency = 4;
-    public float perlinScale = 2.0f;
+    public float perlinScale1 = 2.0f;
     public float lacunarity = 2.0f;
     public float persistence = Mathf.Pow(2, -0.85f);
     public int octaves = 5;
+    public Vector2 secondNoiseOffset;
+    public float perlinScale2 = 2.0f;
+
 
     public RenderTexture WMRenderTexture;
     public ComputeShader computeShader;
@@ -28,9 +31,11 @@ public class WeatherMapGenerator : MonoBehaviour
 
         computeShader.SetInt("resolution", textureResolution);
         computeShader.SetFloat("worleyFreq", (float)worleyNoiseFrequency);
-        computeShader.SetFloat("fbmScale", perlinScale);
+        computeShader.SetFloat("fbmScale1", perlinScale1);
+        computeShader.SetFloat("fbmScale2", perlinScale2);
         computeShader.SetFloat("fbmLacunarity", lacunarity);
         computeShader.SetFloat("fbmPersistence", persistence);
+        computeShader.SetVector("secondNoiseOffset", new Vector4(secondNoiseOffset.x, secondNoiseOffset.y, 0.0f, 0.0f));
         computeShader.SetInt("fbmOctaves", octaves);
 
         computeShader.SetTexture(kernelHandle, "Result", WMRenderTexture);
