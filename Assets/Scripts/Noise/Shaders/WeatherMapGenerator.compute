@@ -17,12 +17,21 @@ RWTexture2D<float4> Result;
 
 uint resolution;
 float worleyFreq;
-float fbmScale1;
-float fbmScale2;
+int fbmOctaves;
 float fbmLacunarity;
 float fbmPersistence;
-int fbmOctaves;
-float4 secondNoiseOffset;
+
+// first noise settings
+float fbmScale1;
+float4 noiseOffset1;
+
+// second noise settings
+float fbmScale2;
+float4 noiseOffset2;
+
+// third noise settings
+float fbmScale3;
+float4 noiseOffset3;
 // ==============================================================================================
 // utility functions
 
@@ -36,7 +45,7 @@ float remap(float value, float ol, float oh, float nl, float nh) {
   return nl + (value - ol) * (nh - nl) / (oh - ol);
 }
 
-float saturate(float x){
+float saturateNoise(float x){
     return -1/(pow(10,x - 0.12)) + 1.3;
 }
 // ==============================================================================================
@@ -88,16 +97,20 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     // TODO: insert actual code here!
     float2 uv = (id / (float) resolution).xy;
     // float perlinFbm = lerp(1.0, fbm(uv * fbmScale), 0.5);
-    float perlinFbm =  fbm(uv * fbmScale1);
+    float perlinFbm =  fbm((uv + float2(noiseOffset1.x, noiseOffset1.y)) * fbmScale1);
     float worley = worleyFbm(uv, worleyFreq);
 
-    float perlinFbm2 = fbm((uv + float2(secondNoiseOffset.x, secondNoiseOffset.y)) * fbmScale2);
-    perlinFbm2 = saturate(perlinFbm2);
+    float perlinFbm2 = fbm((uv + float2(noiseOffset2.x, noiseOffset2.y)) * fbmScale2);
+    perlinFbm2 = saturateNoise(perlinFbm2);
 
     if(perlinFbm2 > 1.) perlinFbm2 = 1.;
+
+    float perlinFbm3 = fbm((uv + float2(noiseOffset3.x, noiseOffset3.y)) * fbmScale3);
     
     float perlinWorley = remap(perlinFbm2, 0., 1., worley, 1.);
+
+
     
 
-    Result[id.xy] = float4(perlinFbm, perlinWorley, 1.0, 1.0);
+    Result[id.xy] = float4(perlinFbm, perlinWorley, perlinFbm3, 1.0);
 }

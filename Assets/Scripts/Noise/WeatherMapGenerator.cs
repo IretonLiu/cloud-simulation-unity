@@ -10,17 +10,24 @@ public class WeatherMapGenerator : MonoBehaviour
     const int computeThreadGroupSize = 8;
 
     public int worleyNoiseFrequency = 4;
-    public float perlinScale1 = 2.0f;
+    public int octaves = 6;
     public float lacunarity = 2.0f;
     public float persistence = Mathf.Pow(2, -0.85f);
-    public int octaves = 5;
-    public Vector2 secondNoiseOffset;
-    public float perlinScale2 = 2.0f;
 
+    [Header("First Noise Settings")]
+    public float perlinScale1 = 2.0f;
+    public Vector2 noiseOffset1;
+
+    [Header("Second Noise Settings")]
+    public float perlinScale2 = 2.0f;
+    public Vector2 noiseOffset2;
+
+    [Header("Third Noise Settings")]
+    public float perlinScale3 = 2.0f;
+    public Vector2 noiseOffset3;
 
     public RenderTexture WMRenderTexture;
     public ComputeShader computeShader;
-    public Material material;
 
     [HideInInspector]
     public bool shouldUpdateNoise = true;
@@ -31,12 +38,21 @@ public class WeatherMapGenerator : MonoBehaviour
 
         computeShader.SetInt("resolution", textureResolution);
         computeShader.SetFloat("worleyFreq", (float)worleyNoiseFrequency);
-        computeShader.SetFloat("fbmScale1", perlinScale1);
-        computeShader.SetFloat("fbmScale2", perlinScale2);
         computeShader.SetFloat("fbmLacunarity", lacunarity);
         computeShader.SetFloat("fbmPersistence", persistence);
-        computeShader.SetVector("secondNoiseOffset", new Vector4(secondNoiseOffset.x, secondNoiseOffset.y, 0.0f, 0.0f));
+
+        computeShader.SetFloat("fbmScale1", perlinScale1);
+
         computeShader.SetInt("fbmOctaves", octaves);
+        computeShader.SetVector("noiseOffset1", new Vector4(noiseOffset1.x, noiseOffset1.y, 0.0f, 0.0f));
+
+        computeShader.SetFloat("fbmScale2", perlinScale2);
+        computeShader.SetVector("noiseOffset2", new Vector4(noiseOffset2.x, noiseOffset2.y, 0.0f, 0.0f));
+
+        computeShader.SetFloat("fbmScale3", perlinScale3);
+        computeShader.SetVector("noiseOffset3", new Vector4(noiseOffset3.x, noiseOffset3.y, 0.0f, 0.0f));
+
+
 
         computeShader.SetTexture(kernelHandle, "Result", WMRenderTexture);
         int numThreadGroups = textureResolution / computeThreadGroupSize;
@@ -57,14 +73,14 @@ public class WeatherMapGenerator : MonoBehaviour
     void OnValidate()
     {
         updateNoise();
-        material.SetTexture("_MainTex", WMRenderTexture);
+        // material.SetTexture("_MainTex", WMRenderTexture);
 
     }
 
-    void Start()
-    {
-        updateNoise();
+    // void Start()
+    // {
+    //     updateNoise();
 
-        material.SetTexture("_MainTex", WMRenderTexture);
-    }
+    //     material.SetTexture("_MainTex", WMRenderTexture);
+    // }
 }

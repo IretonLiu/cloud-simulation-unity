@@ -34,11 +34,16 @@ public class Cloud : MonoBehaviour
         NoiseGenerator noiseGenerator = FindObjectOfType<NoiseGenerator>();
         if (noiseGenerator.shouldUpdateNoise) noiseGenerator.updateNoise();
 
+        WeatherMapGenerator WMGenerator = FindObjectOfType<WeatherMapGenerator>();
+        if (WMGenerator.shouldUpdateNoise) WMGenerator.updateNoise();
+
         material.SetTexture("BaseNoise", noiseGenerator.baseRenderTexture);
         material.SetVector("cloudOffset", offset);
         material.SetFloat("cloudScale", scale);
         material.SetFloat("densityThreshold", densityThreshold);
         material.SetFloat("densityMultiplier", densityMultiplier);
+
+        material.SetTexture("weatherMap", WMGenerator.WMRenderTexture);
 
         Graphics.Blit(source, destination, material);
     }

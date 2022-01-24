@@ -80,6 +80,8 @@ Shader "Unlit/CloudRaymarch"
             }
 
 
+
+
             float3 boundsMin;
             float3 boundsMax;
 
@@ -91,21 +93,41 @@ Shader "Unlit/CloudRaymarch"
             Texture3D<float4> BaseNoise;
             SamplerState samplerBaseNoise;
 
-            float sampleDensity(float3 position) {
-                float3 uvw = position * cloudScale * 0.001 +
+            Texture2D<float4> weatherMap;
+            SamplerState samplerWeatherMap;
+
+            float heightDensityAltering(float heightPercent){
+                return saturate(remap(heightPercent, 0., .2, 0., 1.)) * saturate(remap(heightPercent, 1., .7, 0., 1.));
+            }
+
+            float densityAlter()
+
+
+            float sampleDensity(float3 rayPosition) {
+                float3 boxSize = boundsMax - boundsMin;
+
+
+                float3 baseShapeSamplePosition = (boxSize * 0.5 + rayPosition) * cloudScale * 0.001 +
                             cloudOffset * 0.01;
 
-                uvw = uvw % (boundsMax - boundsMin);
-                // float3 uvw = position * 0.001;
-                float4 shape = BaseNoise.SampleLevel(samplerBaseNoise, uvw, 0);
+                float4 baseNoiseValue = BaseNoise.SampleLevel(samplerBaseNoise, samplePosition, 0);
 
+                float2 wmSamplePosition = 
+                float4 weatherMapSample = weatherMap.SampleLevel(samplerWeatherMap, )
+
+                float3 heightPercent = (rayPosition.y - boundsMin.y) / boxSize.y;
+                float3 heightGradient = alterDensity(heightPercent);
                 // float stratocumulusDensity =
                 //     remap(position.y, 0.0, 0.2, 0.0, 1.0) * remap(position.y, .2, .6, 1., 0.);
-
-                float density = max(0, shape.a - densityThreshold) * -densityMultiplier;
+                float lowFreqFBM = (baseNoiseValue.r * 0.625) + (baseNoiseValue.g * 0.25) + (baseNoiseValue.b * 0.125);
+                float baseCloud = remap(baseNoiseValue.a, lowFreqFBM - 1.0, 1.0, 0.0, 1.0);
+                float density = max(0, baseCloud - densityThreshold) * -densityMultiplier;
+                density *= heightGradient;
                 // float density = shape.a;
                 return density;
             }
+
+            // float henyeyGreenstein(float3 lightVector, float3 viewVec)
 
             fixed4 frag (v2f i) : SV_Target
             {
@@ -137,6 +159,7 @@ Shader "Unlit/CloudRaymarch"
                     totalDensity += sampleDensity(p) * stepSize;
                     dstTravelled += stepSize;
                 }
+
 
                 float transmittance = exp(-totalDensity);
 
