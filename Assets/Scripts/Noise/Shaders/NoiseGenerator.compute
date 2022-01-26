@@ -123,13 +123,13 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
 
   // float worleyNoise =  worleyNoise3D(str * freq, freq);
 
-  float worleyNoiseR = worleyFbm(str, freq);
-  float worleyNoiseG = worleyFbm(str, freq * 2.);
-  float worleyNoiseB = worleyFbm(str, freq * 4.);
+  float worleyNoiseR = saturate(worleyFbm(str, freq));
+  float worleyNoiseG = saturate(worleyFbm(str, freq * 2.));
+  float worleyNoiseB = saturate(worleyFbm(str, freq * 4.));
 
   // vec4 pixelCol = vec4(float3(worleyNoise, 0.0, 0.0), 1.0);
   // float simplexNoise = snoise(str * 10.0);
-  float perlinNoise = lerp(1.0, fbm(str), 0.5);
+  float perlinNoise = lerp(1.0, saturate(fbm(str)), 0.5);
 
   perlinNoise = abs(2.0 * perlinNoise - 1.0); // creates billowy
   float a = 1.0;

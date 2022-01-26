@@ -216,6 +216,42 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+--- !u!84 &599668328
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_ForcedFallbackFormat: 4
+  m_DownscaleFallback: 0
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 3
+  m_Width: 128
+  m_Height: 128
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthFormat: 0
+  m_ColorFormat: 8
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 2
+    m_WrapV: 2
+    m_WrapW: 2
+  m_Dimension: 3
+  m_VolumeDepth: 128
 --- !u!21 &964412679
 Material:
   serializedVersion: 6
@@ -253,6 +289,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1052163896}
   - component: {fileID: 1052163895}
+  - component: {fileID: 1052163897}
   m_Layer: 0
   m_Name: NoiseGenerator
   m_TagString: Untagged
@@ -275,8 +312,8 @@ MonoBehaviour:
   computeShader: {fileID: 7200000, guid: 8c559cb7873b1de46af86001dc11f4c8, type: 3}
   frequency: 4
   perlinFbmOctaves: 0
-  baseRenderTexture: {fileID: 1548832031}
-  detailRenderTexture: {fileID: 1754130122}
+  baseRenderTexture: {fileID: 599668328}
+  detailRenderTexture: {fileID: 1817666943}
   shouldUpdateNoise: 0
 --- !u!4 &1052163896
 Transform:
@@ -292,6 +329,33 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1052163897
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1052163894}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 894fe6476823ccf4e9ee9eece19aeab5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  worleyNoiseFrequency: 6
+  octaves: 6
+  lacunarity: 2
+  persistence: 0.1
+  amplitude: 4
+  frequency: 3.26
+  perlinScale1: 0.62
+  noiseOffset1: {x: 4.08, y: 0}
+  perlinScale2: 0.8
+  noiseOffset2: {x: 0, y: -2.18}
+  perlinScale3: 0.5
+  noiseOffset3: {x: 3.4, y: 0.32}
+  WMRenderTexture: {fileID: 1685597368}
+  computeShader: {fileID: 7200000, guid: 3b469523b94924448bca011c7f647be6, type: 3}
+  shouldUpdateNoise: 0
 --- !u!1 &1463395457
 GameObject:
   m_ObjectHideFlags: 0
@@ -369,13 +433,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1463395457}
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
-  m_LocalPosition: {x: 0, y: -1.8, z: 5}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: 0, y: 0.95968276, z: 0.28108543, w: 0}
+  m_LocalPosition: {x: 0, y: -18.7, z: 5}
+  m_LocalScale: {x: 6.1061664, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+  m_LocalEulerAnglesHint: {x: -32.65, y: 180, z: 0}
 --- !u!114 &1463395461
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -388,14 +452,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50535189c9a3efa4b8e52dc3418cb58e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  offset: {x: 111.9, y: 72.6, z: 13.1}
-  scale: 7.99
-  densityThreshold: 0.88
-  densityMultiplier: 0.86
+  raymarchStepCount: 30
+  offset: {x: 0, y: 0, z: 0}
+  scale: 5.45
+  densityThreshold: 0
+  densityMultiplier: 1.68
+  anvilBias: 0
   shader: {fileID: 4800000, guid: 640fa157e1421094d85d2179ea40bc4e, type: 3}
   boundingBox: {fileID: 2108395191}
   material: {fileID: 964412679}
---- !u!84 &1548832031
+--- !u!84 &1685597368
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -409,8 +475,8 @@ RenderTexture:
   m_DownscaleFallback: 0
   m_IsAlphaChannelOptional: 0
   serializedVersion: 3
-  m_Width: 128
-  m_Height: 128
+  m_Width: 512
+  m_Height: 512
   m_AntiAliasing: 1
   m_MipCount: -1
   m_DepthFormat: 0
@@ -426,12 +492,12 @@ RenderTexture:
     m_FilterMode: 1
     m_Aniso: 1
     m_MipBias: 0
-    m_WrapU: 2
-    m_WrapV: 2
-    m_WrapW: 2
-  m_Dimension: 3
-  m_VolumeDepth: 128
---- !u!84 &1754130122
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+--- !u!84 &1817666943
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -557,8 +623,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2108395191}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -18.51, y: -4.9, z: -61}
-  m_LocalScale: {x: 294.9965, y: 117.10788, z: 109.15315}
+  m_LocalPosition: {x: 0, y: 442, z: 0}
+  m_LocalScale: {x: 1000, y: 100, z: 1000}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2

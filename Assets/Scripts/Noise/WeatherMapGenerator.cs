@@ -13,6 +13,8 @@ public class WeatherMapGenerator : MonoBehaviour
     public int octaves = 6;
     public float lacunarity = 2.0f;
     public float persistence = Mathf.Pow(2, -0.85f);
+    public float amplitude = 1.0f;
+    public float frequency = 4.0f;
 
     [Header("First Noise Settings")]
     public float perlinScale1 = 2.0f;
@@ -29,8 +31,12 @@ public class WeatherMapGenerator : MonoBehaviour
     public RenderTexture WMRenderTexture;
     public ComputeShader computeShader;
 
+    // public Material material;
+
     [HideInInspector]
     public bool shouldUpdateNoise = true;
+
+
     public void updateNoise()
     {
         createTexture(ref WMRenderTexture);
@@ -40,6 +46,8 @@ public class WeatherMapGenerator : MonoBehaviour
         computeShader.SetFloat("worleyFreq", (float)worleyNoiseFrequency);
         computeShader.SetFloat("fbmLacunarity", lacunarity);
         computeShader.SetFloat("fbmPersistence", persistence);
+        computeShader.SetFloat("fbmAmplitude", amplitude);
+        computeShader.SetFloat("fbmFrequency", frequency);
 
         computeShader.SetFloat("fbmScale1", perlinScale1);
 

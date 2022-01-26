@@ -9,16 +9,19 @@ public class Cloud : MonoBehaviour
     // Transform boxTransform;
 
     [Header("Cloud Settings")]
+    public int raymarchStepCount = 30;
     public Vector3 offset;
     public float scale = 1;
 
     [Range(0, 1)]
     public float densityThreshold = 1;
     public float densityMultiplier = 1;
+    public float anvilBias = 1;
 
     public Shader shader;
     public GameObject boundingBox;
     public Material material;
+
 
 
     void OnRenderImage(RenderTexture source, RenderTexture destination)
@@ -31,6 +34,8 @@ public class Cloud : MonoBehaviour
         material.SetVector("boundsMin", transform.position - transform.localScale / 2);
         material.SetVector("boundsMax", transform.position + transform.localScale / 2);
 
+        material.SetInt("raymarchStepCount", raymarchStepCount);
+
         NoiseGenerator noiseGenerator = FindObjectOfType<NoiseGenerator>();
         if (noiseGenerator.shouldUpdateNoise) noiseGenerator.updateNoise();
 
@@ -42,8 +47,9 @@ public class Cloud : MonoBehaviour
         material.SetFloat("cloudScale", scale);
         material.SetFloat("densityThreshold", densityThreshold);
         material.SetFloat("densityMultiplier", densityMultiplier);
+        material.SetFloat("anvilBias", anvilBias);
 
-        material.SetTexture("weatherMap", WMGenerator.WMRenderTexture);
+        material.SetTexture("WeatherMap", WMGenerator.WMRenderTexture);
 
         Graphics.Blit(source, destination, material);
     }

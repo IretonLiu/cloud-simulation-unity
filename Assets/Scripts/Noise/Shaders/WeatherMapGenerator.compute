@@ -20,6 +20,8 @@ float worleyFreq;
 int fbmOctaves;
 float fbmLacunarity;
 float fbmPersistence;
+float fbmAmplitude;
+float fbmFrequency;
 
 // first noise settings
 float fbmScale1;
@@ -75,13 +77,13 @@ float worleyFbm(float2 uv, float freq) {
   return noise;
 }
 
-float fbm(float2 uv){
+float fbm(float2 uv, float freq){
     // const int NUM_OCTAVES = 6;
     float G = exp2(-.85);
 
     float value = 0.0;
-    float amplitude = 1.;
-    float frequency = 4.0;
+    float amplitude = fbmAmplitude;
+    float frequency = freq;
     for (int i = 0; i < fbmOctaves; ++i) {
         value += amplitude * snoise(uv * frequency);
         frequency *= fbmLacunarity;
@@ -97,20 +99,14 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     // TODO: insert actual code here!
     float2 uv = (id / (float) resolution).xy;
     // float perlinFbm = lerp(1.0, fbm(uv * fbmScale), 0.5);
-    float perlinFbm =  fbm((uv + float2(noiseOffset1.x, noiseOffset1.y)) * fbmScale1);
+    float perlinFbm =  saturate(fbm(uv + float2(noiseOffset1.x, noiseOffset1.y), fbmFrequency));
+
     float worley = worleyFbm(uv, worleyFreq);
+    float perlinFbm2 = saturate(fbm(uv + float2(noiseOffset2.x, noiseOffset2.y), fbmFrequency));
 
-    float perlinFbm2 = fbm((uv + float2(noiseOffset2.x, noiseOffset2.y)) * fbmScale2);
-    perlinFbm2 = saturateNoise(perlinFbm2);
-
-    if(perlinFbm2 > 1.) perlinFbm2 = 1.;
-
-    float perlinFbm3 = fbm((uv + float2(noiseOffset3.x, noiseOffset3.y)) * fbmScale3);
+    float perlinFbm3 = saturate(fbm(uv + float2(noiseOffset3.x, noiseOffset3.y), fbmFrequency * .5 ));
     
-    float perlinWorley = remap(perlinFbm2, 0., 1., worley, 1.);
-
-
-    
+    float perlinWorley = saturate((1-perlinFbm2) *  remap(perlinFbm2 , 0., 1., worley , 1.));
 
     Result[id.xy] = float4(perlinFbm, perlinWorley, perlinFbm3, 1.0);
 }

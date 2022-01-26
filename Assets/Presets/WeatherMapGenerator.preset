@@ -1,0 +1,99 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!181963792 &2655988077585873504
+Preset:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: WeatherMapGenerator
+  m_TargetType:
+    m_NativeTypeID: 114
+    m_ManagedTypePPtr: {fileID: 11500000, guid: 894fe6476823ccf4e9ee9eece19aeab5, type: 3}
+    m_ManagedTypeFallback: 
+  m_Properties:
+  - target: {fileID: 0}
+    propertyPath: m_Enabled
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_EditorHideFlags
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_EditorClassIdentifier
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: worleyNoiseFrequency
+    value: 6
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: octaves
+    value: 6
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: lacunarity
+    value: 2
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: persistence
+    value: 0.56
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: amplitude
+    value: 4
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: frequency
+    value: 3.26
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: perlinScale1
+    value: 0.62
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: noiseOffset1.x
+    value: 4.08
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: noiseOffset1.y
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: perlinScale2
+    value: 0.8
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: noiseOffset2.x
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: noiseOffset2.y
+    value: -2.18
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: perlinScale3
+    value: 0.5
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: noiseOffset3.x
+    value: 3.4
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: noiseOffset3.y
+    value: 0.32
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: WMRenderTexture
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: computeShader
+    value: 
+    objectReference: {fileID: 7200000, guid: 3b469523b94924448bca011c7f647be6, type: 3}
+  - target: {fileID: 0}
+    propertyPath: shouldUpdateNoise
+    value: 0
+    objectReference: {fileID: 0}
+  m_ExcludedProperties: []
