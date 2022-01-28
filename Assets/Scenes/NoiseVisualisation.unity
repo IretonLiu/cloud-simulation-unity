@@ -123,7 +123,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!84 &5369096
+--- !u!84 &74613029
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -633,7 +633,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2124877506}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalPosition: {x: -0.006, y: 1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -651,18 +651,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 894fe6476823ccf4e9ee9eece19aeab5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  worleyNoiseFrequency: 6
+  worleyNoiseFrequency: 13
   octaves: 6
   lacunarity: 2
   persistence: 0.56
   amplitude: 4
-  frequency: 3.26
-  perlinScale1: 0.62
-  noiseOffset1: {x: 4.08, y: 0}
-  perlinScale2: 0.8
-  noiseOffset2: {x: 0, y: -2.18}
-  perlinScale3: 0.5
-  noiseOffset3: {x: 3.4, y: 0.32}
-  WMRenderTexture: {fileID: 5369096}
+  baseFrequency: 2
+  coverageFrequency: 4
+  noiseOffset1: {x: 7.1, y: 0}
+  noiseOffset2: {x: 1.39, y: -2.18}
+  frequency3: 1
+  noiseOffset3: {x: 3.98, y: 0.32}
+  WMRenderTexture: {fileID: 74613029}
   computeShader: {fileID: 7200000, guid: 3b469523b94924448bca011c7f647be6, type: 3}
   shouldUpdateNoise: 0

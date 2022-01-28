@@ -26,7 +26,7 @@ Preset:
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: worleyNoiseFrequency
-    value: 6
+    value: 13
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: octaves
@@ -45,40 +45,36 @@ Preset:
     value: 4
     objectReference: {fileID: 0}
   - target: {fileID: 0}
-    propertyPath: frequency
-    value: 3.26
+    propertyPath: baseFrequency
+    value: 2
     objectReference: {fileID: 0}
   - target: {fileID: 0}
-    propertyPath: perlinScale1
-    value: 0.62
+    propertyPath: coverageFrequency
+    value: 4
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: noiseOffset1.x
-    value: 4.08
+    value: 7.1
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: noiseOffset1.y
     value: 0
     objectReference: {fileID: 0}
   - target: {fileID: 0}
-    propertyPath: perlinScale2
-    value: 0.8
-    objectReference: {fileID: 0}
-  - target: {fileID: 0}
     propertyPath: noiseOffset2.x
-    value: 0
+    value: 1.39
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: noiseOffset2.y
     value: -2.18
     objectReference: {fileID: 0}
   - target: {fileID: 0}
-    propertyPath: perlinScale3
-    value: 0.5
+    propertyPath: frequency3
+    value: 1
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: noiseOffset3.x
-    value: 3.4
+    value: 3.98
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: noiseOffset3.y

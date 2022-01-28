@@ -16,12 +16,19 @@ public class Cloud : MonoBehaviour
     [Range(0, 1)]
     public float densityThreshold = 1;
     public float densityMultiplier = 1;
-    public float anvilBias = 1;
+    // public float anvilBias = 1;
 
     public Shader shader;
     public GameObject boundingBox;
     public Material material;
 
+    [Header("Lighting")]
+
+    [Range(0, 1)]
+    public float darknessThreshold = 0;
+    public float lightAbsorption = 1;
+    [Range(-1, 1)]
+    public float g = 0.5f;
 
 
     void OnRenderImage(RenderTexture source, RenderTexture destination)
@@ -42,14 +49,20 @@ public class Cloud : MonoBehaviour
         WeatherMapGenerator WMGenerator = FindObjectOfType<WeatherMapGenerator>();
         if (WMGenerator.shouldUpdateNoise) WMGenerator.updateNoise();
 
+        // values related to shaping the cloud
         material.SetTexture("BaseNoise", noiseGenerator.baseRenderTexture);
         material.SetVector("cloudOffset", offset);
         material.SetFloat("cloudScale", scale);
         material.SetFloat("densityThreshold", densityThreshold);
         material.SetFloat("densityMultiplier", densityMultiplier);
-        material.SetFloat("anvilBias", anvilBias);
+        // material.SetFloat("anvilBias", anvilBias);
 
         material.SetTexture("WeatherMap", WMGenerator.WMRenderTexture);
+
+        // values related to lighting the cloud
+        material.SetFloat("darknessThreshold", darknessThreshold);
+        material.SetFloat("lightAbsorption", lightAbsorption);
+        material.SetFloat("g", g);
 
         Graphics.Blit(source, destination, material);
     }

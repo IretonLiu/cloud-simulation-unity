@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+[ExecuteInEditMode, ImageEffectAllowedInSceneView]
 
 public class WeatherMapGenerator : MonoBehaviour
 {
@@ -14,18 +15,20 @@ public class WeatherMapGenerator : MonoBehaviour
     public float lacunarity = 2.0f;
     public float persistence = Mathf.Pow(2, -0.85f);
     public float amplitude = 1.0f;
-    public float frequency = 4.0f;
+    // public float frequency = 4.0f;
+
+    [Header("Base Noise Settings")]
+    public float baseFrequency = 3;
+    public float coverageFrequency = 5;
 
     [Header("First Noise Settings")]
-    public float perlinScale1 = 2.0f;
     public Vector2 noiseOffset1;
 
     [Header("Second Noise Settings")]
-    public float perlinScale2 = 2.0f;
     public Vector2 noiseOffset2;
 
     [Header("Third Noise Settings")]
-    public float perlinScale3 = 2.0f;
+    public float frequency3 = 2.0f;
     public Vector2 noiseOffset3;
 
     public RenderTexture WMRenderTexture;
@@ -47,17 +50,13 @@ public class WeatherMapGenerator : MonoBehaviour
         computeShader.SetFloat("fbmLacunarity", lacunarity);
         computeShader.SetFloat("fbmPersistence", persistence);
         computeShader.SetFloat("fbmAmplitude", amplitude);
-        computeShader.SetFloat("fbmFrequency", frequency);
-
-        computeShader.SetFloat("fbmScale1", perlinScale1);
-
         computeShader.SetInt("fbmOctaves", octaves);
+
+        computeShader.SetFloat("baseFrequency", baseFrequency);
+        computeShader.SetFloat("coverageFreq", coverageFrequency);
         computeShader.SetVector("noiseOffset1", new Vector4(noiseOffset1.x, noiseOffset1.y, 0.0f, 0.0f));
-
-        computeShader.SetFloat("fbmScale2", perlinScale2);
         computeShader.SetVector("noiseOffset2", new Vector4(noiseOffset2.x, noiseOffset2.y, 0.0f, 0.0f));
-
-        computeShader.SetFloat("fbmScale3", perlinScale3);
+        computeShader.SetFloat("frequency3", frequency3);
         computeShader.SetVector("noiseOffset3", new Vector4(noiseOffset3.x, noiseOffset3.y, 0.0f, 0.0f));
 
 
@@ -81,14 +80,23 @@ public class WeatherMapGenerator : MonoBehaviour
     void OnValidate()
     {
         updateNoise();
-        // material.SetTexture("_MainTex", WMRenderTexture);
-
     }
 
-    // void Start()
-    // {
-    //     updateNoise();
 
-    //     material.SetTexture("_MainTex", WMRenderTexture);
-    // }
+    //         material.SetTexture("_MainTex", WMRenderTexture);
+
+    //     }
+
+    //     void update()
+    //     {
+    //         updateNoise();
+
+    //         material.SetTexture("_MainTex", WMRenderTexture);
+    //     }
+    //     void Start()
+    //     {
+    //         updateNoise();
+
+    //         material.SetTexture("_MainTex", WMRenderTexture);
+    //     }
 }

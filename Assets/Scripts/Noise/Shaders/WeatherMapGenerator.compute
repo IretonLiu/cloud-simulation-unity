@@ -21,18 +21,17 @@ int fbmOctaves;
 float fbmLacunarity;
 float fbmPersistence;
 float fbmAmplitude;
-float fbmFrequency;
 
+// base noise settings
+float baseFrequency;
+
+float coverageFreq;
 // first noise settings
-float fbmScale1;
 float4 noiseOffset1;
-
 // second noise settings
-float fbmScale2;
 float4 noiseOffset2;
-
 // third noise settings
-float fbmScale3;
+float frequency3;
 float4 noiseOffset3;
 // ==============================================================================================
 // utility functions
@@ -77,9 +76,10 @@ float worleyFbm(float2 uv, float freq) {
   return noise;
 }
 
-float fbm(float2 uv, float freq){
+float fbm(float2 uv, float2 offset, float freq){
     // const int NUM_OCTAVES = 6;
     float G = exp2(-.85);
+    uv = uv + offset;
 
     float value = 0.0;
     float amplitude = fbmAmplitude;
@@ -99,14 +99,20 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     // TODO: insert actual code here!
     float2 uv = (id / (float) resolution).xy;
     // float perlinFbm = lerp(1.0, fbm(uv * fbmScale), 0.5);
-    float perlinFbm =  saturate(fbm(uv + float2(noiseOffset1.x, noiseOffset1.y), fbmFrequency));
+
+    float2 randomOffset = float2(123, 12);
+    float baseFbm = saturate(lerp(1.0, fbm(uv, randomOffset, baseFrequency), 0.5));
+
+    float perlinFbm =  saturate(lerp(1.0, fbm(uv, noiseOffset1.xy, coverageFreq), 0.5));
+    perlinFbm *= baseFbm;
 
     float worley = worleyFbm(uv, worleyFreq);
-    float perlinFbm2 = saturate(fbm(uv + float2(noiseOffset2.x, noiseOffset2.y), fbmFrequency));
+    float perlinFbm2 = saturate(lerp(1.0, fbm(uv, noiseOffset2.xy, coverageFreq), 0.5));
+    float perlinWorley = perlinFbm2 * remap( 1 - perlinFbm2 , 0., 1., worley , 1.);
+    perlinWorley *= baseFbm;
 
-    float perlinFbm3 = saturate(fbm(uv + float2(noiseOffset3.x, noiseOffset3.y), fbmFrequency * .5 ));
+    float perlinFbm3 = saturate(lerp(1.0, fbm(uv, noiseOffset3.xy, frequency3), 0.5));
     
-    float perlinWorley = saturate((1-perlinFbm2) *  remap(perlinFbm2 , 0., 1., worley , 1.));
 
-    Result[id.xy] = float4(perlinFbm, perlinWorley, perlinFbm3, 1.0);
+    Result[id.xy] = float4(perlinFbm, perlinWorley, 1.0, 1.0);
 }
