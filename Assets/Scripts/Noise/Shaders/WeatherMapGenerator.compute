@@ -103,11 +103,11 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     float2 randomOffset = float2(123, 12);
     float baseFbm = saturate(lerp(1.0, fbm(uv, randomOffset, baseFrequency), 0.5));
 
-    float perlinFbm =  saturate(lerp(1.0, fbm(uv, noiseOffset1.xy, coverageFreq), 0.5));
+    float perlinFbm =  lerp(1.0, fbm(uv, noiseOffset1.xy, coverageFreq), 0.5);
     perlinFbm *= baseFbm;
 
     float worley = worleyFbm(uv, worleyFreq);
-    float perlinFbm2 = saturate(lerp(1.0, fbm(uv, noiseOffset2.xy, coverageFreq), 0.5));
+    float perlinFbm2 = lerp(1.0, fbm(uv, noiseOffset2.xy, coverageFreq), 0.5);
     float perlinWorley = perlinFbm2 * remap( 1 - perlinFbm2 , 0., 1., worley , 1.);
     perlinWorley *= baseFbm;
 

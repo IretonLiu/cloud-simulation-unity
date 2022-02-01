@@ -92,6 +92,7 @@ Shader "Unlit/CloudRaymarch"
 
             float darknessThreshold;
             float lightAbsorption;
+            float lightStepSize;
             float g;        
 
             Texture3D<float4> BaseNoise;
@@ -103,12 +104,12 @@ Shader "Unlit/CloudRaymarch"
 
             // shaping
             float heightDensityGradient(float heightPercent, float4 weatherMapSample){
-                float heightDensityGradient = saturate(remap(heightPercent, 0., .2, 0., 1.)) * saturate(remap(heightPercent, .7, 1.,  1., 0.));
+                float heightDensityGradient = heightPercent * saturate(remap(heightPercent, 0., .2, 0., 1.)) * saturate(remap(heightPercent, 1., .7,  0., 1.));
                 
                 // float heightDensityGradient = 1;
                 float stratus =  saturate(remap(heightPercent, 0.01, 0.03, 0., 1.)) * saturate(remap(heightPercent, 0.03, 0.15, 1., 0.));
                 float stratocumulus = saturate(remap(heightPercent, 0, .1, 0, 1)) * saturate(remap(heightPercent, .2, .3, 1, 0));
-                float cumulus = saturate(remap(heightPercent, 0, .1, 0, 1)) * saturate(remap(heightPercent, 0.1, 0.8, 1, 0)); 
+                float cumulus = remap(heightPercent, 0, .1, 0, 1) * remap(heightPercent, 0.1, 0.8, 1, 0); 
 
                 float type = weatherMapSample.b;
                 if(type <= 0){ //stratus
@@ -149,35 +150,35 @@ Shader "Unlit/CloudRaymarch"
                 float3 boxCentre = (boundsMax + boundsMin) /2;
 
 
-                // float3 baseShapeSamplePosition = (boxSize * 0.5 + rayPosition) * cloudScale * 0.0001 +
-                //             cloudOffset * 0.01;
+                float3 baseShapeSamplePosition = (boxSize * 0.5 + rayPosition) * cloudScale * 0.0001 +
+                            cloudOffset * 0.01;
 
-                float3 baseShapeSamplePosition = (rayPosition - boundsMin) / boxSize;
+                // float3 baseShapeSamplePosition = (rayPosition - boundsMin) / boxSize;
 
                 float4 baseNoiseValue = BaseNoise.SampleLevel(samplerBaseNoise, baseShapeSamplePosition, 0);
 
 
                 // weather map is 10km x 10km, assume that each unit is 1km
-                // float2 wmSamplePosition = saturate((rayPosition.xz - boundsMin.xz) / max(boxSize.x, boxSize.z));
                 float2 wmSamplePosition = (rayPosition.xz - boundsMin.xz)  * 0.0001 ;
                 float4 weatherMapSample = WeatherMap.SampleLevel(samplerWeatherMap, wmSamplePosition, 0);
 
                 float3 heightPercent = saturate(abs(rayPosition.y - boundsMin.y) / boxSize.y);
-                float3 heightGradient = heightDensityGradient(heightPercent, weatherMapSample);
                 // float stratocumulusDensity =
                 //     remap(position.y, 0.0, 0.2, 0.0, 1.0) * remap(position.y, .2, .6, 1., 0.);
                 float lowFreqFBM = (baseNoiseValue.r * 0.625) + (baseNoiseValue.g * 0.25) + (baseNoiseValue.b * 0.125);
                 float baseCloud = remap(baseNoiseValue.a, - (1.0 - lowFreqFBM), 1.0, 0.0, 1.0);
-                baseCloud *= heightGradient;
-                //  max(0, baseCloud - densityThreshold) * densityMultiplier;
 
-                float coverage = weatherMapSample.r;
+                float3 heightGradient = heightDensityGradient(heightPercent, weatherMapSample);
+                baseCloud = max(0, baseCloud - densityThreshold) * densityMultiplier;
+                baseCloud *= heightGradient;
+
+                float coverage = weatherMapSample.g;
                 // coverage = pow(coverage, remap(heightPercent, 0.7, 0.8, 1.0, lerp(1.0, 0.5, anvilBias)));
                 float baseCloudWithCoverage = remap(baseCloud, coverage, 1.0, 0.0, 1.0);
-                baseCloud *= coverage;
+                 baseCloudWithCoverage *= coverage;
 
                 // float density = shape.a;
-                return baseCloud;
+                return  baseCloudWithCoverage ;
             }
 
 
@@ -206,26 +207,24 @@ Shader "Unlit/CloudRaymarch"
                 // uses raymarch to sample accumulative density from light to source sample;
                 float3 dirToLight = _WorldSpaceLightPos0.xyz;
 
-
                 // get distance to box from inside;
                 float2 rayBoxInfo = rayBoxDst(boundsMin, boundsMax, samplePos, 1/dirToLight);
-
                 float dstInsideBox = rayBoxInfo.y;
 
-
-
-                float stepSize = dstInsideBox / 5;
+                float stepSize = dstInsideBox / 10.0;
                 float dstTravelled = stepSize;
 
                 float totalDensity = 0;
                 
-                [loop]for(int i = 0; i < 5; i++){
-                    samplePos += dirToLight * dstTravelled; 
-                    totalDensity += sampleDensity(samplePos) * stepSize;
-                    dstTravelled = i * stepSize;
+                [loop]for(int i = 0; i < 10; i++){
+                    samplePos += dirToLight * stepSize; 
+                    totalDensity += max(0, sampleDensity(samplePos) * stepSize);
+                    // dstTravelled += stepSize;
                 }
 
-                return beer(totalDensity) + darknessThreshold;
+                float transmittance = beer(totalDensity);
+
+                return transmittance + darknessThreshold;
 
             }
             fixed4 frag (v2f i) : SV_Target
@@ -248,7 +247,8 @@ Shader "Unlit/CloudRaymarch"
                 float dstTravelled = 0;
                 float stepSize = dstInsideBox / numSteps;
                 
-
+                float cosAngle = dot(rd, _WorldSpaceLightPos0.xyz);
+                float phaseVal = henyeyGreenstein(cosAngle, g);
                 float transmittance = 1; // extinction
                 float3 lightEnergy = 0; // scattering  
                 float totalDensity = 0;
@@ -259,12 +259,9 @@ Shader "Unlit/CloudRaymarch"
                     float density  = sampleDensity(p);
                     if(density > 0){
                         // totalDensity += density;
-                        transmittance *= beer(density * stepSize);
                         float lightTransmittance = lightMarch(p);
-
-                        lightEnergy += density * stepSize* transmittance * lightTransmittance;
-                        // lightEnergy += density * stepSize * lightTransmittance;
-                        // // lightEnergy += density * stepSize * transmittance * lightTransmittance;
+                        lightEnergy += density * stepSize * transmittance * lightTransmittance * phaseVal;
+                        transmittance *= beer(density * stepSize);
 
                     }
                     
@@ -272,7 +269,10 @@ Shader "Unlit/CloudRaymarch"
                 }
 
 
-                // float transmittance = exp(-totalDensity);
+                // float transmittance = exp(totalDensity);
+                // float3 col = tex2D(_MainTex, i.uv) * transmittance;
+                // return float4(col, 0);
+                
                 float3 cloudCol = lightEnergy;
                 float3 col = tex2D(_MainTex, i.uv) * transmittance + cloudCol;
                 return float4(col, 0);

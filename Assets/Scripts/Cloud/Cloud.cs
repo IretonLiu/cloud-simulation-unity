@@ -27,6 +27,8 @@ public class Cloud : MonoBehaviour
     [Range(0, 1)]
     public float darknessThreshold = 0;
     public float lightAbsorption = 1;
+    public float lightStepSize = 100;
+
     [Range(-1, 1)]
     public float g = 0.5f;
 

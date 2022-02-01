@@ -46,9 +46,9 @@ Shader "Custom/DensityHeightMaps"
         {
             // Albedo comes from a texture tinted by color
             float y = IN.uv_MainTex.y;
-            float density = remap(y, 0., 0.1, 0., 1.) * remap(y, 0.2, 0.3, 1., 0.);//stratus
+            // float density = saturate(remap(y, 0., 0.1, 0., 1.)) * saturate(remap(y, 0.2, 0.3, 1., 0.));//stratus
             // float density =  remap(y, 0, .1, 0, 1) * remap(y, .2, .3, 1, 0);//stratocumulus
-            // float density =  remap(y, 0, .1, 0, 1) * remap(y, 0., 0.7, 1, 0);//cumulus
+            float density =   (remap(y, 0, .1, 0, 1)) * (remap(y, 0.1, 0.8, 1, 0)); 
             fixed4 c = fixed4(density, density, density, 1.0);
             
             o.Albedo = c.rgb;
