@@ -19,6 +19,7 @@ public class WeatherMapGenerator : MonoBehaviour
 
     [Header("Base Noise Settings")]
     public float baseFrequency = 3;
+    public Vector2 baseNoiseOffset;
     public float coverageFrequency = 5;
 
     [Header("First Noise Settings")]
@@ -54,6 +55,7 @@ public class WeatherMapGenerator : MonoBehaviour
 
         computeShader.SetFloat("baseFrequency", baseFrequency);
         computeShader.SetFloat("coverageFreq", coverageFrequency);
+        computeShader.SetVector("baseNoiseOffset", baseNoiseOffset);
         computeShader.SetVector("noiseOffset1", new Vector4(noiseOffset1.x, noiseOffset1.y, 0.0f, 0.0f));
         computeShader.SetVector("noiseOffset2", new Vector4(noiseOffset2.x, noiseOffset2.y, 0.0f, 0.0f));
         computeShader.SetFloat("frequency3", frequency3);

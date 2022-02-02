@@ -9,6 +9,7 @@ public class Cloud : MonoBehaviour
     // Transform boxTransform;
 
     [Header("Cloud Settings")]
+    public Texture2D blueNoise; // used to randomly off set the ray origin to reduce layered artifact
     public int raymarchStepCount = 30;
     public Vector3 offset;
     public float scale = 1;
@@ -16,6 +17,8 @@ public class Cloud : MonoBehaviour
     [Range(0, 1)]
     public float densityThreshold = 1;
     public float densityMultiplier = 1;
+    [Range(0, 1)]
+    public float globalCoverageMultiplier;
     // public float anvilBias = 1;
 
     public Shader shader;
@@ -42,8 +45,8 @@ public class Cloud : MonoBehaviour
         Transform transform = boundingBox.transform;
         material.SetVector("boundsMin", transform.position - transform.localScale / 2);
         material.SetVector("boundsMax", transform.position + transform.localScale / 2);
-
         material.SetInt("raymarchStepCount", raymarchStepCount);
+        material.SetTexture("BlueNoise", blueNoise);
 
         NoiseGenerator noiseGenerator = FindObjectOfType<NoiseGenerator>();
         if (noiseGenerator.shouldUpdateNoise) noiseGenerator.updateNoise();
@@ -57,6 +60,7 @@ public class Cloud : MonoBehaviour
         material.SetFloat("cloudScale", scale);
         material.SetFloat("densityThreshold", densityThreshold);
         material.SetFloat("densityMultiplier", densityMultiplier);
+        material.SetFloat("globalCoverage", globalCoverageMultiplier);
         // material.SetFloat("anvilBias", anvilBias);
 
         material.SetTexture("WeatherMap", WMGenerator.WMRenderTexture);

@@ -24,6 +24,7 @@ float fbmAmplitude;
 
 // base noise settings
 float baseFrequency;
+float4 baseNoiseOffset;
 
 float coverageFreq;
 // first noise settings
@@ -100,18 +101,20 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     float2 uv = (id / (float) resolution).xy;
     // float perlinFbm = lerp(1.0, fbm(uv * fbmScale), 0.5);
 
-    float2 randomOffset = float2(123, 12);
-    float baseFbm = saturate(lerp(1.0, fbm(uv, randomOffset, baseFrequency), 0.5));
+    // float2 randomOffset = float2(123, 12);
+    float baseFbm = lerp(1.0, fbm(uv, baseNoiseOffset.xy, baseFrequency), 0.5);
 
     float perlinFbm =  lerp(1.0, fbm(uv, noiseOffset1.xy, coverageFreq), 0.5);
     perlinFbm *= baseFbm;
+    perlinFbm = saturate(perlinFbm);
 
     float worley = worleyFbm(uv, worleyFreq);
     float perlinFbm2 = lerp(1.0, fbm(uv, noiseOffset2.xy, coverageFreq), 0.5);
     float perlinWorley = perlinFbm2 * remap( 1 - perlinFbm2 , 0., 1., worley , 1.);
     perlinWorley *= baseFbm;
+    perlinWorley = saturate(perlinWorley);
 
-    float perlinFbm3 = saturate(lerp(1.0, fbm(uv, noiseOffset3.xy, frequency3), 0.5));
+    float perlinFbm3 = lerp(1.0, fbm(uv, noiseOffset3.xy, frequency3), 0.5);
     
 
     Result[id.xy] = float4(perlinFbm, perlinWorley, 1.0, 1.0);
