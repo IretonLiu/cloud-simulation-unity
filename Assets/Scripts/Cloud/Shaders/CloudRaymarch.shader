@@ -86,10 +86,16 @@ Shader "Unlit/CloudRaymarch"
             Texture2D<float4> BlueNoise;
             SamplerState samplerBlueNoise;
 
-            float cloudScale;
-            float3 cloudOffset;
-            float densityThreshold;
+
+            float time;
+            float baseNoiseScale;
+            float3 baseNoiseOffset;
+            // float densityThreshold;
             float densityMultiplier;
+
+            float detailNoiseScale;
+            float3 detailNoiseOffset;
+
             float globalCoverage;
             float anvilBias;
 
@@ -100,6 +106,9 @@ Shader "Unlit/CloudRaymarch"
 
             Texture3D<float4> BaseNoise;
             SamplerState samplerBaseNoise;
+
+            Texture3D<float4> DetailNoise;
+            SamplerState samplerDetailNoise;
 
             Texture2D<float4> WeatherMap;
             SamplerState samplerWeatherMap;
@@ -143,54 +152,67 @@ Shader "Unlit/CloudRaymarch"
             }
                 
 
-            //     if(weatherMapSample.b < 0.2){ //stratus
-            //         retVal *= saturate(remap(heightPercent, 0.01, 0.03, 0., 1.)) * saturate(remap(heightPercent, 0.03, 0.15, 1., 0.));
-            //     } else if(weatherMapSample.b >= 0.2 && weatherMapSample.b < 0.6){
-            //         retVal *= saturate(remap(heightPercent, 0, .1, 0, 1)) * saturate(remap(heightPercent, .2, .3, 1, 0)); //stratocumulus
-            //     } else{
-            //         retVal *= saturate(remap(heightPercent, 0, .1, 0, 1)) * saturate(remap(heightPercent, 0.1, 0.8, 1, 0)); //cumulus
-            //     } 
-
-            //     return retVal;
-                
-            // }
-
-
             float sampleDensity(float3 rayPosition) {
+                
+
                 float3 boxSize = abs(boundsMax - boundsMin);
                 float3 boxCentre = (boundsMax + boundsMin) /2;
+                float3 heightPercent = saturate(abs(rayPosition.y - boundsMin.y) / boxSize.y);
 
 
-                float3 baseShapeSamplePosition = (boxSize * 0.5 + rayPosition) * cloudScale * 0.0001 +
-                            cloudOffset * 0.01;
+                float3 baseShapeSamplePosition = (boxSize * 0.5 + rayPosition) * baseNoiseScale * 0.001 +
+                            baseNoiseOffset* 0.01;
 
-                // float3 baseShapeSamplePosition = (rayPosition - boundsMin) / boxSize;
+                // wind settings
+                float3 windDirection = float3(1.0, 0.0, 0.0);
+                float cloudSpeed = 10.0;
+                // cloud_top offset - push the tops of the clouds along this wind direction by this many units.
+                float cloudTopOffset = .5;
+
+                baseShapeSamplePosition += heightPercent * windDirection * cloudTopOffset;
+                // baseShapeSamplePosition += (windDirection + float3(0., 1., 0.)) * time * cloudSpeed;
 
                 float4 baseNoiseValue = BaseNoise.SampleLevel(samplerBaseNoise, baseShapeSamplePosition, 0);
 
 
                 // weather map is 10km x 10km, assume that each unit is 1km
-                float2 wmSamplePosition = (rayPosition.xz - boundsMin.xz)  * 0.00005 ;
+                float2 wmSamplePosition = (rayPosition.xz - boundsMin.xz)  * 0.0005 ;
                 float4 weatherMapSample = WeatherMap.SampleLevel(samplerWeatherMap, wmSamplePosition, 0);
 
-                float3 heightPercent = saturate(abs(rayPosition.y - boundsMin.y) / boxSize.y);
-                // float stratocumulusDensity =
-                //     remap(position.y, 0.0, 0.2, 0.0, 1.0) * remap(position.y, .2, .6, 1., 0.);
+
+                // create fbm from the base noise
                 float lowFreqFBM = (baseNoiseValue.r * 0.625) + (baseNoiseValue.g * 0.25) + (baseNoiseValue.b * 0.125);
+                // get the base cloud shape with the base noise
                 float baseCloud = remap(baseNoiseValue.a, - (1.0 - lowFreqFBM), 1.0, 0.0, 1.0);
 
-                float SA = shapeAltering(heightPercent, weatherMapSample);
+                float SA = shapeAltering(heightPercent, weatherMapSample); 
                 float DA = densityAltering(heightPercent, weatherMapSample);
                 // baseCloud = max(0, baseCloud - densityThreshold) * densityMultiplier;
                 // baseCloud *= heightGradient;
 
                 float coverage = weatherMapSample.g;
                 // coverage = pow(coverage, remap(heightPercent, 0.7, 0.8, 1.0, lerp(1.0, 0.5, anvilBias)));
-                float baseCloudWithCoverage = saturate(remap(baseCloud * SA, 1 - globalCoverage * coverage, 1.0, 0.0, 1.0)) * DA;
-                // baseCloudWithCoverage *= coverage;
+                float baseCloudWithCoverage = saturate(remap(baseCloud * SA, 1 - globalCoverage * coverage, 1.0, 0.0, 1.0));
+                
+                baseCloudWithCoverage *= coverage;
 
                 // float density = shape.a;
-                return  baseCloudWithCoverage ;
+                // return  baseCloudWithCoverage ;
+                float finalCloud = baseCloudWithCoverage;
+                // add detailed noise
+                if(baseCloudWithCoverage > 0){
+                    float3 detailNoiseSamplePos = rayPosition * detailNoiseScale * 0.001 + detailNoiseOffset;
+                    float3 detailNoise = DetailNoise.SampleLevel(samplerDetailNoise, detailNoiseSamplePos, 0).rgb;
+
+                    float highFreqFbm = (detailNoise.r * 0.625) + (detailNoise.g * 0.25) + (detailNoise.b * 0.125);
+
+                    float detailNoiseModifier = 0.35 * exp(-globalCoverage * 0.75) * lerp(highFreqFbm, 1. - highFreqFbm, saturate(heightPercent * 5.0));
+
+                    finalCloud = saturate(remap(baseCloudWithCoverage, detailNoiseModifier, 1.0, 0.0, 1.0));
+
+                } 
+
+                return finalCloud * DA;
             }
 
 
@@ -262,7 +284,8 @@ Shader "Unlit/CloudRaymarch"
 
                 // random offset on the starting position to remove the layering artifact
                 float randomOffset = BlueNoise.SampleLevel(samplerBlueNoise, i.uv * 1000, 0);
-                float dstTravelled = (randomOffset - 0.5) * 2 * stepSize;
+                float dstTravelled = (randomOffset - 0.5) * 2 * stepSize*2;
+                // float dstTravelled = 0;
                 
                 float cosAngle = dot(rd, _WorldSpaceLightPos0.xyz);
                 float phaseVal = henyeyGreenstein(cosAngle, g);
