@@ -10,7 +10,7 @@ This is a reimplementation of the cloud rendering technique first demonstrated b
     <figcaption>Result</figcaption>
 </figure>
 
-The above shows the results I achieve at the current stage, this is not a complete reimplementation of the techniques metioned above.
+The above gif shows the results I achieved at the current stage, this is not a complete reimplementation of the techniques metioned.
 
 TODO:
 
