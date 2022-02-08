@@ -82,7 +82,9 @@ Shader "Unlit/CloudRaymarch"
             float3 boundsMin;
             float3 boundsMax;
 
+            bool raymarchByCount; // determines weather to raymarch by step count or step size
             int raymarchStepCount;
+            float raymarchStepSize;
             Texture2D<float4> BlueNoise;
             SamplerState samplerBlueNoise;
 
@@ -170,7 +172,7 @@ Shader "Unlit/CloudRaymarch"
                 float cloudTopOffset = .5;
 
                 baseShapeSamplePosition += heightPercent * windDirection * cloudTopOffset;
-                // baseShapeSamplePosition += (windDirection + float3(0., 1., 0.)) * time * cloudSpeed;
+                baseShapeSamplePosition += (windDirection + float3(0., 1., 0.)) * time * 0.002 * cloudSpeed;
 
                 float4 baseNoiseValue = BaseNoise.SampleLevel(samplerBaseNoise, baseShapeSamplePosition, 0);
 
@@ -250,7 +252,7 @@ Shader "Unlit/CloudRaymarch"
 
                 float totalDensity = 0;
                 
-                [loop]for(int i = 0; i < 10; i++){
+                for(int i = 0; i < 10; i++){
                     samplePos += dirToLight * stepSize; 
                     totalDensity += max(0, sampleDensity(samplePos) * stepSize);
                     // dstTravelled += stepSize;
@@ -278,9 +280,14 @@ Shader "Unlit/CloudRaymarch"
                 // if(dstInsideBox > 0){
                 //     col = 0;
                 // }
-                int numSteps = raymarchStepCount;
+                float stepSize;
 
-                float stepSize = dstInsideBox / numSteps;
+                if(raymarchByCount){
+                    int numSteps = raymarchStepCount;
+                    stepSize = dstInsideBox / numSteps;
+                }else{
+                    stepSize = dstInsideBox == 0 ? 0 : raymarchStepSize;
+                }
 
                 // random offset on the starting position to remove the layering artifact
                 float randomOffset = BlueNoise.SampleLevel(samplerBlueNoise, i.uv * 1000, 0);

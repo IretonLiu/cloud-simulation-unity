@@ -8,9 +8,15 @@ public class Cloud : MonoBehaviour
 
     // Transform boxTransform;
 
+    [Header("Raymarch Settings")]
+    public bool raymarchByStepCount;
+    public int stepCount = 30;
+
+    [Range(1, 10)]
+    public float stepSize = 10;
+
     [Header("Cloud Settings")]
     public Texture2D blueNoise; // used to randomly off set the ray origin to reduce layered artifact
-    public int raymarchStepCount = 30;
 
     [Header("Base Noise")]
     public Vector3 baseNoiseOffset;
@@ -54,7 +60,9 @@ public class Cloud : MonoBehaviour
         Transform transform = boundingBox.transform;
         material.SetVector("boundsMin", transform.position - transform.localScale / 2);
         material.SetVector("boundsMax", transform.position + transform.localScale / 2);
-        material.SetInt("raymarchStepCount", raymarchStepCount);
+        material.SetInt("raymarchByCount", raymarchByStepCount ? 1 : 0);
+        material.SetInt("raymarchStepCount", stepCount);
+        material.SetFloat("raymarchStepSize", stepSize);
         material.SetTexture("BlueNoise", blueNoise);
 
         NoiseGenerator noiseGenerator = FindObjectOfType<NoiseGenerator>();
@@ -95,3 +103,4 @@ public class Cloud : MonoBehaviour
 
     }
 }
+
