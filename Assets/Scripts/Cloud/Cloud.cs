@@ -40,11 +40,16 @@ public class Cloud : MonoBehaviour
 
     [Range(0, 1)]
     public float darknessThreshold = 0;
-    public float lightAbsorption = 1;
-    public float lightStepSize = 100;
-
-    [Range(-1, 1)]
-    public float g = 0.5f;
+    public float lightAbsorptionThroughCloud = 1;
+    public float lightAbsorptionTowardSun = 1;
+    [Range(0, 1)]
+    public float forwardScattering = .83f;
+    [Range(0, 1)]
+    public float backScattering = .3f;
+    [Range(0, 1)]
+    public float baseBrightness = 0.5f;
+    [Range(0, 1)]
+    public float phaseFactor = .15f;
 
     [Header("Other")]
     public Shader shader;
@@ -92,15 +97,18 @@ public class Cloud : MonoBehaviour
 
         // values related to lighting the cloud
         material.SetFloat("darknessThreshold", darknessThreshold);
-        material.SetFloat("lightAbsorption", lightAbsorption);
-        material.SetFloat("g", g);
-
+        material.SetFloat("lightAbsorptionThroughCloud", lightAbsorptionThroughCloud);
+        material.SetFloat("lightAbsorptionTowardSun", lightAbsorptionTowardSun);
+        material.SetVector("phaseParams", new Vector4(forwardScattering, backScattering, baseBrightness, phaseFactor));
         Graphics.Blit(source, destination, material);
     }
     // Update is called once per frame
-    void Update()
+    void OnValidate()
     {
-
+        if (stepCount < 10)
+        {
+            stepCount = 10;
+        }
     }
 }
 

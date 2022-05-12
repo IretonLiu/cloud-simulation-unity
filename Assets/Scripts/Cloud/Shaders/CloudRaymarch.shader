@@ -102,9 +102,9 @@ Shader "Unlit/CloudRaymarch"
             float anvilBias;
 
             float darknessThreshold;
-            float lightAbsorption;
-            float lightStepSize;
-            float g;        
+            float lightAbsorptionThroughCloud;
+            float lightAbsorptionTowardSun;
+            float4 phaseParams;
 
             Texture3D<float4> BaseNoise;
             SamplerState samplerBaseNoise;
@@ -162,8 +162,8 @@ Shader "Unlit/CloudRaymarch"
                 float3 heightPercent = saturate(abs(rayPosition.y - boundsMin.y) / boxSize.y);
 
 
-                float3 baseShapeSamplePosition = (boxSize * 0.5 + rayPosition) * baseNoiseScale * 0.001 +
-                            baseNoiseOffset* 0.01;
+                float3 baseShapeSamplePosition = (boxSize * 0.5 + rayPosition) * baseNoiseScale * 0.0001  +
+                            baseNoiseOffset* 0.0001;
 
                 // wind settings
                 float3 windDirection = float3(1.0, 0.0, 0.0);
@@ -172,13 +172,13 @@ Shader "Unlit/CloudRaymarch"
                 float cloudTopOffset = .5;
 
                 baseShapeSamplePosition += heightPercent * windDirection * cloudTopOffset;
-                baseShapeSamplePosition += (windDirection + float3(0., 1., 0.)) * time * 0.002 * cloudSpeed;
+                baseShapeSamplePosition += (windDirection + float3(0., 1., 0.)) * time  * 0.001 * cloudSpeed;
 
                 float4 baseNoiseValue = BaseNoise.SampleLevel(samplerBaseNoise, baseShapeSamplePosition, 0);
 
 
                 // weather map is 10km x 10km, assume that each unit is 1km
-                float2 wmSamplePosition = (rayPosition.xz - boundsMin.xz)  * 0.0005 ;
+                float2 wmSamplePosition = (rayPosition.xz - boundsMin.xz)  * 0.00005 ;
                 float4 weatherMapSample = WeatherMap.SampleLevel(samplerWeatherMap, wmSamplePosition, 0);
 
 
@@ -220,8 +220,8 @@ Shader "Unlit/CloudRaymarch"
 
             // lighting
             
-            float beer(float d) {
-                float beer = exp(-d * lightAbsorption);
+            float beer(float d, float b) {
+                float beer = exp(-d * b);
                 return beer;
             }
 
@@ -231,10 +231,18 @@ Shader "Unlit/CloudRaymarch"
 
                 float g2 = g * g;
                 float pi = 3.14159265358979;
-                float hg = ((1.0 - g2)/pow(1 + g2 - 2 * g * cos(cosAngle), 1.5)) * (0.25 * pi);
+                float hg = (1.0 - g2)/(4 * pi *pow(1 + g2 - 2 * g * cosAngle, 1.5)) ;
                 // TODO: pow 1.5 could be expensive, consider replacing with schlick phase function
 
                 return hg;
+            };
+
+            // credits to sebastian lague
+            float phaseFunction(float a){
+                float blend = .5;
+                // blend between forward and backward scattering
+                float hgBlend = henyeyGreenstein(a,phaseParams.x) * (1-blend) + henyeyGreenstein(a,-phaseParams.y) * blend;
+                return phaseParams.z + hgBlend * phaseParams.w;
             };
 
             // march from sample point to light source
@@ -247,20 +255,20 @@ Shader "Unlit/CloudRaymarch"
                 float2 rayBoxInfo = rayBoxDst(boundsMin, boundsMax, samplePos, 1/dirToLight);
                 float dstInsideBox = rayBoxInfo.y;
 
-                float stepSize = dstInsideBox / 10.0;
+                float stepSize = dstInsideBox / 6.0;
                 float dstTravelled = stepSize;
 
                 float totalDensity = 0;
                 
-                for(int i = 0; i < 10; i++){
+                for(int i = 0; i < 6; i++){
                     samplePos += dirToLight * stepSize; 
-                    totalDensity += max(0, sampleDensity(samplePos) * stepSize);
+                    totalDensity += max(0, sampleDensity(samplePos ) *stepSize);
                     // dstTravelled += stepSize;
                 }
 
-                float transmittance = beer(totalDensity);
+                float transmittance = max(beer(totalDensity, lightAbsorptionTowardSun), beer(totalDensity * 0.25, lightAbsorptionTowardSun) * 0.7);
 
-                return transmittance + darknessThreshold;
+                return  darknessThreshold + transmittance * (1-darknessThreshold);
 
             }
             fixed4 frag (v2f i) : SV_Target
@@ -294,22 +302,27 @@ Shader "Unlit/CloudRaymarch"
                 float dstTravelled = (randomOffset - 0.5) * 2 * stepSize*2;
                 // float dstTravelled = 0;
                 
-                float cosAngle = dot(rd, _WorldSpaceLightPos0.xyz);
-                float phaseVal = henyeyGreenstein(cosAngle, g);
+                float cosAngle = dot(normalize(rd), normalize(_WorldSpaceLightPos0.xyz));
+                float phaseVal = phaseFunction(cosAngle);
                 float transmittance = 1; // extinction
-                float3 lightEnergy = 0; // scattering  
+                float3 lightEnergy = 0; // the amount of light reaches the eye  
                 float totalDensity = 0;
 
                 // sample march through volume
-                [loop] while (dstTravelled < dstInsideBox) {
+                while (dstTravelled < dstInsideBox) {
                     float3 p = ro + rd * (dstToBox + dstTravelled);
                     float density  = sampleDensity(p);
                     if(density > 0){
                         // totalDensity += density;
                         float lightTransmittance = lightMarch(p);
+                        
                         lightEnergy += density * stepSize * transmittance * lightTransmittance * phaseVal;
-                        transmittance *= beer(density * stepSize);
 
+                        transmittance *= beer(density * stepSize, lightAbsorptionThroughCloud);// as the ray marches further in, the more the light will be lost
+                        // Exit early if T is close to zero as further samples won't affect the result much
+                        if (transmittance < 0.01) {
+                            break;
+                        }
                     }
                     
                     dstTravelled += stepSize;
@@ -322,6 +335,7 @@ Shader "Unlit/CloudRaymarch"
                 
                 float3 cloudCol = lightEnergy;
                 float3 col = tex2D(_MainTex, i.uv) * transmittance + cloudCol;
+                // col = cosAngle;
                 return float4(col, 0);
             }
             ENDCG
